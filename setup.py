@@ -88,14 +88,50 @@ if "-warnings" in sys.argv:
     sys.argv.remove ("-warnings")
 
 if 'cython' in sys.argv:
+    # compile .pyx files
     # So you can `setup.py cython` or `setup.py cython install`
     try:
-        from Cython.Build import cythonize
+        from Cython.Build.Dependencies import cythonize_one
     except ImportError:
         print("You need cython. https://cython.org/, pip install cython --user")
+        sys.exit(1)
 
-    cythonize(["src_c/_sdl2/*.pyx", "src_c/pypm.pyx"],
-              include_path=["src_c/_sdl2", "src_c"])
+    import glob
+    pyx_files = glob.glob(os.path.join('src_c', 'cython', 'pygame', '*.pyx')) + \
+                glob.glob(os.path.join('src_c', 'cython', 'pygame', '**', '*.pyx'))
+    queue = []
+
+    for pyx_file in pyx_files:
+        no_ext = os.path.splitext(pyx_file)[0].split(os.path.sep)
+
+        mod = no_ext[:]
+        del mod[0:2]
+        mod = '.'.join(mod)
+
+        c_file = no_ext[:]
+        del c_file[1:3] # output in src_c/
+        c_file = os.path.sep.join(c_file) + '.c'
+
+        # update outdated .c files
+        if os.path.isfile(c_file):
+            c_timestamp = os.path.getmtime(c_file)
+            pyx_timestamp = os.path.getmtime(pyx_file)
+            if pyx_timestamp > c_timestamp:
+                outdated = True
+            else:
+                outdated = False
+        else:
+            outdated = True
+        if outdated:
+            print('Compiling {} because it changed.'.format(pyx_file))
+            queue.append(dict(pyx_file=pyx_file, c_file=c_file, fingerprint=None, quiet=False,
+                              full_module_name=mod))
+
+    count = len(queue)
+    for i, kwargs in enumerate(queue):
+        kwargs['progress'] = '[{}/{}] '.format(i + 1, count)
+        cythonize_one(**kwargs)
+
     sys.argv.remove('cython')
 
 AUTO_CONFIG = False
