@@ -12,7 +12,7 @@ MESSAGEBOX_WARNING = _SDL_MESSAGEBOX_WARNING
 MESSAGEBOX_INFORMATION = _SDL_MESSAGEBOX_INFORMATION
 
 
-cdef extern from "../pygame.h" nogil:
+cdef extern from "pygame.h" nogil:
     int pgSurface_Check(object surf)
     SDL_Surface* pgSurface_AsSurface(object surf)
     void import_pygame_surface()

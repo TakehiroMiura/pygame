@@ -278,7 +278,7 @@ cdef extern from "SDL.h" nogil:
                                Uint8        g,
                                Uint8        b)
 
-cdef extern from "../pygame.h" nogil:
+cdef extern from "pygame.h" nogil:
     ctypedef class pygame.Color [object pgColorObject]:
         cdef Uint8 data[4]
         cdef Uint8 len
